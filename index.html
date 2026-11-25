@@ -29,6 +29,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,.btn:focus-visib
 .badge.ok{border-color:var(--acc);color:var(--acc)}
 .row{margin:8px 0}.row b{display:block;color:var(--muted);font-size:.8rem;font-weight:600}
 a{color:var(--acc)}
+.tabs{margin-bottom:6px}.tabs .btn{margin:0 8px 8px 0}
+.btn.alt.on{background:var(--ink);color:var(--bg)}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.filters label.chk{grid-column:1/-1;margin-bottom:6px}
+.pc{margin:10px 0}.pc h3{margin:0 6px 4px 0;font-size:1.1rem;display:inline}.you{color:var(--muted);font-weight:400;font-size:.9rem}
+.meta{color:var(--muted);font-size:.9rem;margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chip{border:1px solid var(--line);border-radius:12px;padding:1px 10px;font-size:.82rem}
+.bio{white-space:pre-line;margin:6px 0}
 </style>
 </head>
 <body>
@@ -45,6 +52,19 @@ a{color:var(--acc)}
 
 <section id="appv" hidden>
   <div class="top"><span id="who"></span><button class="btn alt" id="out" type="button" style="margin:0">Çıkış</button></div>
+  <nav class="tabs" id="tabs" hidden>
+    <button class="btn alt" id="t-dir" type="button">Hizmet verenler</button>
+    <button class="btn alt" id="t-prof" type="button">Profilim</button>
+  </nav>
+  <div id="dirv" hidden>
+    <div class="filters">
+      <label>İl<select id="fil"></select></label>
+      <label>Kategori<select id="fcat"></select></label>
+      <label class="chk"><input type="checkbox" id="fvf"> Sadece doğrulanmış</label>
+    </div>
+    <p class="msg" id="dm" role="status" style="color:var(--muted)"></p>
+    <div id="dl"></div>
+  </div>
   <div class="card" id="prof"></div>
 </section>
 
@@ -56,19 +76,53 @@ const IL=["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Anka
 const CATS=["Yerel model","Yaşam tarzı","Rehberlik","Yeme-içme","Konaklama","Ulaşım","Diğer"];
 const $=id=>document.getElementById(id);
 const sb=supabase.createClient(SB_URL,SB_KEY);
-let user=null, profile=null, contact=null;
+let user=null, profile=null, contact=null, tab=null;
 
 function add(p,tag,text,cls){ const e=document.createElement(tag); if(cls) e.className=cls; e.textContent=text; p.appendChild(e); return e; }
 const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; };
 
 async function refresh(){
-  if(!user){ view("auth"); return; }
+  if(!user){ tab=null; view("auth"); return; }
   view("app"); $("who").textContent=user.email;
   const p=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
   if(p.error){ $("prof").textContent="Profil alınamadı: "+p.error.message; return; }
   const c=await sb.from("contacts").select("*").eq("user_id",user.id).maybeSingle();
   profile=p.data; contact=c.data;
+  if(!profile) tab="prof"; else if(tab===null) tab="dir";
   profile?renderProfile():renderForm(false);
+  draw();
+}
+
+function draw(){
+  $("tabs").hidden=!profile; $("dirv").hidden=tab!=="dir"; $("prof").hidden=tab!=="prof";
+  $("t-dir").classList.toggle("on",tab==="dir"); $("t-prof").classList.toggle("on",tab==="prof");
+  if(tab==="dir") loadDir();
+}
+
+async function loadDir(){
+  const dm=$("dm"), dl=$("dl"); dm.textContent="Yükleniyor…";
+  let q=sb.from("profiles").select("id,display_name,il,ilce,categories,bio,portfolio_url,price_note,verified")
+    .eq("role","veren").eq("status","onayli").order("verified",{ascending:false}).order("created_at",{ascending:false}).limit(60);
+  if($("fil").value) q=q.eq("il",$("fil").value);
+  if($("fcat").value) q=q.contains("categories",[$("fcat").value]);
+  if($("fvf").checked) q=q.eq("verified",true);
+  const r=await q;
+  dl.textContent="";
+  if(r.error){ dm.textContent="Liste alınamadı: "+r.error.message; return; }
+  dm.textContent=r.data.length?r.data.length+" hizmet veren":"Bu filtrede onaylı hizmet veren yok.";
+  r.data.forEach(p=>{
+    const c=document.createElement("article"); c.className="card pc";
+    const h=add(c,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
+    if(p.verified) add(c,"span","Doğrulanmış","badge ok");
+    add(c,"div",p.il+(p.ilce?" / "+p.ilce:""),"meta");
+    const cl=add(c,"div","","chips"); (p.categories||[]).forEach(x=>add(cl,"span",x,"chip"));
+    if(p.bio) add(c,"p",p.bio,"bio");
+    if(p.price_note) add(c,"div","Ücret: "+p.price_note,"meta");
+    if(p.portfolio_url&&/^https?:\/\//i.test(p.portfolio_url)){
+      const a=add(c,"a",p.portfolio_url); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
+    }
+    dl.appendChild(c);
+  });
 }
 
 function renderProfile(){
@@ -143,8 +197,14 @@ async function save(e,edit){
   if(r.error){ fm.textContent="Kaydedilemedi: "+r.error.message; return; }
   const c=await sb.from("contacts").upsert({user_id:user.id,whatsapp:g("wa")||null,email:g("ce")||null});
   if(c.error){ fm.textContent="İletişim bilgisi kaydedilemedi: "+c.error.message; return; }
-  refresh();
+  tab="prof"; refresh();
 }
+
+$("fil").innerHTML='<option value="">Tüm iller</option>'+IL.map(i=>`<option>${i}</option>`).join("");
+$("fcat").innerHTML='<option value="">Tüm kategoriler</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
+["fil","fcat","fvf"].forEach(id=>$(id).addEventListener("change",loadDir));
+$("t-dir").onclick=()=>{ tab="dir"; draw(); };
+$("t-prof").onclick=()=>{ tab="prof"; if(profile) renderProfile(); draw(); };
 
 // Giriş / kayıt
 const am=t=>{ $("am").textContent=t; };
