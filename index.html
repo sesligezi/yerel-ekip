@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yerel Ekip</title>
+<style>
+:root{--bg:#f3f1ec;--panel:#fff;--ink:#1d2433;--muted:#5d6678;--line:#d9dbe0;--acc:#1b4b8f;--warn:#b4491f}
+@media (prefers-color-scheme:dark){:root{--bg:#141a26;--panel:#1b2332;--ink:#e8ebf2;--muted:#9aa4b8;--line:#2c3547;--acc:#6aa0f0;--warn:#f08a5a}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif;padding:16px;max-width:640px;margin-inline:auto}
+h1{font-size:1.6rem;margin:8px 0 2px}
+.sub{color:var(--muted);margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+label{display:block;margin:10px 0 0;font-size:.9rem;color:var(--muted)}
+input,select,textarea{width:100%;font:inherit;padding:8px 10px;margin-top:4px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+input[type=checkbox],input[type=radio]{width:auto;margin:0 8px 0 0}
+label.chk,label.rad{display:flex;align-items:flex-start;color:var(--ink);font-size:.95rem}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:12px 0 0;padding:6px 12px 10px}
+legend{color:var(--muted);font-size:.9rem;padding:0 4px}
+.btn{background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;margin:12px 8px 0 0}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--ink);padding:7px 12px}
+.btn.del{background:transparent;color:var(--warn);border:2px solid var(--warn);padding:7px 12px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.msg{color:var(--warn);min-height:1.4em;margin:10px 0 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;color:var(--muted);font-size:.9rem}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:12px;padding:1px 10px;font-size:.8rem;margin-right:6px}
+.badge.ok{border-color:var(--acc);color:var(--acc)}
+.row{margin:8px 0}.row b{display:block;color:var(--muted);font-size:.8rem;font-weight:600}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<h1>Yerel Ekip</h1>
+<p class="sub">Fotoğrafçı ve video ekipleriyle yerel hizmet verenleri buluşturur.</p>
+
+<section class="card" id="authv" hidden>
+  <label>E-posta<input id="em" type="email" autocomplete="email"></label>
+  <label>Şifre (en az 8 karakter)<input id="pw" type="password" autocomplete="current-password"></label>
+  <button class="btn" id="signin" type="button">Giriş yap</button>
+  <button class="btn alt" id="signup" type="button">Kayıt ol</button>
+  <p class="msg" id="am" role="status"></p>
+</section>
+
+<section id="appv" hidden>
+  <div class="top"><span id="who"></span><button class="btn alt" id="out" type="button" style="margin:0">Çıkış</button></div>
+  <div class="card" id="prof"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL="https://hknnurwiwdgvrvlzwveq.supabase.co";
+const SB_KEY="sb_publishable_7M7F5ZmzPgTIVIY0t3304g_N-2iuJzS";
+const IL=["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ankara","Antalya","Ardahan","Artvin","Aydın","Balıkesir","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkâri","Hatay","Iğdır","Isparta","İstanbul","İzmir","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kayseri","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Konya","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Şanlıurfa","Şırnak","Tekirdağ","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"];
+const CATS=["Yerel model","Yaşam tarzı","Rehberlik","Yeme-içme","Konaklama","Ulaşım","Diğer"];
+const $=id=>document.getElementById(id);
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let user=null, profile=null, contact=null;
+
+function add(p,tag,text,cls){ const e=document.createElement(tag); if(cls) e.className=cls; e.textContent=text; p.appendChild(e); return e; }
+const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; };
+
+async function refresh(){
+  if(!user){ view("auth"); return; }
+  view("app"); $("who").textContent=user.email;
+  const p=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
+  if(p.error){ $("prof").textContent="Profil alınamadı: "+p.error.message; return; }
+  const c=await sb.from("contacts").select("*").eq("user_id",user.id).maybeSingle();
+  profile=p.data; contact=c.data;
+  profile?renderProfile():renderForm(false);
+}
+
+function renderProfile(){
+  const p=profile, box=$("prof"); box.textContent="";
+  add(box,"h2",p.display_name).style.margin="0 0 6px";
+  const b=document.createElement("div");
+  add(b,"span",{beklemede:"Onay bekliyor",onayli:"Onaylı",reddedildi:"Reddedildi"}[p.status],"badge"+(p.status==="onayli"?" ok":""));
+  if(p.verified) add(b,"span","Doğrulanmış","badge ok");
+  box.appendChild(b);
+  const row=(k,v)=>{ if(!v) return null; const d=document.createElement("div"); d.className="row"; add(d,"b",k); box.appendChild(d); return d; };
+  const put=(k,v)=>{ const d=row(k,v); if(d) d.append(v); };
+  put("Rol",p.role==="veren"?"Hizmet veren":"Hizmet alan");
+  put("Konum",p.il+(p.ilce?" / "+p.ilce:""));
+  put("Kategoriler",(p.categories||[]).join(", "));
+  put("Tanıtım",p.bio);
+  const pd=row("Portföy",p.portfolio_url);
+  if(pd&&/^https?:\/\//i.test(p.portfolio_url)){ const a=document.createElement("a"); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=p.portfolio_url; pd.appendChild(a); } else if(pd) pd.append(p.portfolio_url);
+  put("Ücret notu",p.price_note);
+  add(box,"p",p.status==="onayli"?"Profilin onaylandı.":p.status==="beklemede"?"Profilin incelendikten sonra yayınlanacak.":"Profilin onaylanmadı. Bilgilerini düzenleyip tekrar başvurmak için bizimle iletişime geç.","msg").style.color="var(--muted)";
+  const e=add(box,"button","Düzenle","btn"); e.type="button"; e.onclick=()=>renderForm(true);
+  const d=add(box,"button","Profili sil","btn del"); d.type="button";
+  d.onclick=async()=>{
+    if(!confirm("Profilini, iletişim bilgilerini ve taleplerini kalıcı olarak silmek istiyor musun?")) return;
+    const r=await sb.from("profiles").delete().eq("id",user.id);
+    if(r.error) alert("Silinemedi: "+r.error.message); else refresh();
+  };
+}
+
+function renderForm(edit){
+  $("prof").innerHTML=`<form id="pf" novalidate>
+  <fieldset id="rl"><legend>Ben</legend>
+   <label class="rad"><input type="radio" name="role" value="veren"> Hizmet veren (yerel model, rehber, yeme-içme, konaklama…)</label>
+   <label class="rad"><input type="radio" name="role" value="alan"> Hizmet alan (fotoğrafçı / video ekibi)</label>
+  </fieldset>
+  <label>Görünen ad<input id="dn" maxlength="60"></label>
+  <label>İl<select id="il"><option value="">Seç</option>${IL.map(i=>`<option>${i}</option>`).join("")}</select></label>
+  <label>İlçe<input id="ilce" maxlength="60"></label>
+  <fieldset><legend>Kategoriler</legend>${CATS.map(c=>`<label class="chk"><input type="checkbox" name="cat" value="${c}"> ${c}</label>`).join("")}</fieldset>
+  <label>Kısa tanıtım (en fazla 600 karakter)<textarea id="bio" maxlength="600" rows="4"></textarea></label>
+  <label>Portföy / sosyal medya bağlantısı<input id="pu" type="url" placeholder="https://"></label>
+  <label>Ücret notu (isteğe bağlı)<input id="pn" maxlength="200"></label>
+  <fieldset><legend>İletişim: yalnızca kabul ettiğin taleplerde karşı tarafa açılır</legend>
+   <label>WhatsApp<input id="wa" maxlength="30"></label>
+   <label>E-posta<input id="ce" type="email" maxlength="120"></label>
+  </fieldset>
+  <label class="chk" id="rz" style="margin-top:12px"><input type="checkbox" id="rza"> Ad, il, kategori, tanıtım ve bağlantılarımın onaydan sonra giriş yapan kullanıcılara açık gösterilmesini kabul ediyorum. Profilimi istediğim zaman silebilirim.</label>
+  <button class="btn" type="submit">Kaydet</button><button class="btn alt" type="button" id="cn">Vazgeç</button>
+  <p class="msg" id="fm" role="status"></p></form>`;
+  if(edit){
+    const p=profile;
+    document.querySelector(`input[name=role][value=${p.role}]`).checked=true;
+    document.querySelectorAll("input[name=role]").forEach(r=>r.disabled=true);
+    $("dn").value=p.display_name; $("il").value=p.il; $("ilce").value=p.ilce||""; $("bio").value=p.bio||"";
+    $("pu").value=p.portfolio_url||""; $("pn").value=p.price_note||"";
+    document.querySelectorAll("input[name=cat]").forEach(c=>{ c.checked=(p.categories||[]).includes(c.value); });
+    if(contact){ $("wa").value=contact.whatsapp||""; $("ce").value=contact.email||""; }
+    $("rz").hidden=true; $("cn").onclick=renderProfile;
+  } else $("cn").hidden=true;
+  $("pf").onsubmit=e=>save(e,edit);
+}
+
+async function save(e,edit){
+  e.preventDefault();
+  const g=id=>$(id).value.trim(), fm=$("fm");
+  const cats=[...document.querySelectorAll("input[name=cat]:checked")].map(x=>x.value);
+  const role=edit?profile.role:(document.querySelector("input[name=role]:checked")||{}).value, pu=g("pu");
+  const err=!role?"Rol seç.":g("dn").length<2?"Görünen ad en az 2 karakter olmalı.":!g("il")?"İl seç.":!cats.length?"En az bir kategori seç.":
+    (pu&&!/^https?:\/\//i.test(pu))?"Bağlantı http:// ya da https:// ile başlamalı.":(!edit&&!$("rza").checked)?"Devam etmek için yayın onayını işaretle.":"";
+  if(err){ fm.textContent=err; return; }
+  const f={display_name:g("dn"),il:g("il"),ilce:g("ilce")||null,categories:cats,bio:g("bio")||null,portfolio_url:pu||null,price_note:g("pn")||null};
+  const r=edit?await sb.from("profiles").update(f).eq("id",user.id):await sb.from("profiles").insert({...f,id:user.id,role,acik_riza:true});
+  if(r.error){ fm.textContent="Kaydedilemedi: "+r.error.message; return; }
+  const c=await sb.from("contacts").upsert({user_id:user.id,whatsapp:g("wa")||null,email:g("ce")||null});
+  if(c.error){ fm.textContent="İletişim bilgisi kaydedilemedi: "+c.error.message; return; }
+  refresh();
+}
+
+// Giriş / kayıt
+const am=t=>{ $("am").textContent=t; };
+$("signin").onclick=async()=>{
+  const r=await sb.auth.signInWithPassword({email:$("em").value.trim(),password:$("pw").value});
+  am(r.error?"Giriş başarısız: "+r.error.message:"");
+};
+$("signup").onclick=async()=>{
+  const pw=$("pw").value;
+  if(pw.length<8){ am("Şifre en az 8 karakter olmalı."); return; }
+  const r=await sb.auth.signUp({email:$("em").value.trim(),password:pw,options:{emailRedirectTo:location.href.split("#")[0]}});
+  if(r.error) am("Kayıt başarısız: "+r.error.message);
+  else if(!r.data.session) am("Doğrulama bağlantısı e-postana gönderildi. Bağlantıya tıkladıktan sonra giriş yap.");
+};
+$("out").onclick=()=>sb.auth.signOut();
+
+if(SB_URL.includes("PROJE-ID")){ view("auth"); am("Önce kodun başındaki SB_URL satırına Supabase Project URL'ini yaz."); }
+else {
+  sb.auth.getSession().then(({data})=>{ user=data.session?data.session.user:null; refresh(); });
+  sb.auth.onAuthStateChange((ev,session)=>{
+    const id=session?session.user.id:null;
+    if(id!==(user?user.id:null)){ user=session?session.user:null; setTimeout(refresh,0); }
+  });
+}
+</script>
+</body>
+</html>
