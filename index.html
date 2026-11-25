@@ -54,6 +54,7 @@ a{color:var(--acc)}
   <div class="top"><span id="who"></span><button class="btn alt" id="out" type="button" style="margin:0">Çıkış</button></div>
   <nav class="tabs" id="tabs" hidden>
     <button class="btn alt" id="t-dir" type="button">Hizmet verenler</button>
+    <button class="btn alt" id="t-req" type="button">Taleplerim</button>
     <button class="btn alt" id="t-prof" type="button">Profilim</button>
   </nav>
   <div id="dirv" hidden>
@@ -65,6 +66,7 @@ a{color:var(--acc)}
     <p class="msg" id="dm" role="status" style="color:var(--muted)"></p>
     <div id="dl"></div>
   </div>
+  <div id="reqv" hidden></div>
   <div class="card" id="prof"></div>
 </section>
 
@@ -94,9 +96,66 @@ async function refresh(){
 }
 
 function draw(){
-  $("tabs").hidden=!profile; $("dirv").hidden=tab!=="dir"; $("prof").hidden=tab!=="prof";
-  $("t-dir").classList.toggle("on",tab==="dir"); $("t-prof").classList.toggle("on",tab==="prof");
-  if(tab==="dir") loadDir();
+  $("tabs").hidden=!profile; $("dirv").hidden=tab!=="dir"; $("reqv").hidden=tab!=="req"; $("prof").hidden=tab!=="prof";
+  ["dir","req","prof"].forEach(t=>$("t-"+t).classList.toggle("on",tab===t));
+  if(tab==="dir") loadDir(); else if(tab==="req") loadReq();
+}
+
+function openReq(card,btn,p){
+  btn.hidden=true;
+  const f=document.createElement("div");
+  f.innerHTML='<label>Mesajın (en az 5, en fazla 500 karakter)<textarea rows="4" maxlength="500"></textarea></label><button class="btn" type="button">Gönder</button><button class="btn alt" type="button">Vazgeç</button><p class="msg"></p>';
+  const ta=f.querySelector("textarea"), bs=f.querySelectorAll("button"), m=f.querySelector(".msg");
+  bs[1].onclick=()=>{ f.remove(); btn.hidden=false; };
+  bs[0].onclick=async()=>{
+    const t=ta.value.trim();
+    if(t.length<5){ m.textContent="Mesaj en az 5 karakter olmalı."; return; }
+    const r=await sb.from("requests").insert({from_id:user.id,to_id:p.id,message:t});
+    if(r.error){ m.textContent=r.error.code==="23505"?"Bu hizmet verene zaten talep gönderdin.":r.error.code==="42501"?"Talep göndermek için profilinin onaylı olması gerekir.":"Gönderilemedi: "+r.error.message; return; }
+    loadDir();
+  };
+  card.appendChild(f);
+}
+
+async function loadReq(){
+  const box=$("reqv"); box.textContent="Yükleniyor…";
+  const r=await sb.from("requests").select("id,from_id,to_id,message,status,created_at").order("created_at",{ascending:false});
+  if(r.error){ box.textContent="Talepler alınamadı: "+r.error.message; return; }
+  const other=x=>x.from_id===user.id?x.to_id:x.from_id, names={}, cts={};
+  const ids=[...new Set(r.data.map(other))];
+  if(ids.length){
+    const pr=await sb.from("profiles").select("id,display_name,il").in("id",ids);
+    (pr.data||[]).forEach(p=>{ names[p.id]=p; });
+    const acc=r.data.filter(x=>x.status==="kabul").map(other);
+    if(acc.length){ const cr=await sb.from("contacts").select("*").in("user_id",acc); (cr.data||[]).forEach(c=>{ cts[c.user_id]=c; }); }
+  }
+  box.textContent="";
+  const sec=(title,list,incoming)=>{
+    add(box,"h2",title).style.fontSize="1.1rem";
+    if(!list.length){ add(box,"p","Henüz talep yok.","meta"); return; }
+    list.forEach(x=>{
+      const o=names[other(x)]||{}, c=document.createElement("article"); c.className="card pc";
+      add(c,"h3",o.display_name||"Bilinmeyen kullanıcı");
+      add(c,"span",{bekliyor:"Bekliyor",kabul:"Kabul edildi",red:"Reddedildi"}[x.status],"badge"+(x.status==="kabul"?" ok":""));
+      add(c,"div",(o.il?o.il+" · ":"")+new Date(x.created_at).toLocaleDateString("tr-TR"),"meta");
+      add(c,"p",x.message,"bio");
+      if(x.status==="kabul"){
+        const ct=cts[other(x)], t=ct?[ct.whatsapp&&"WhatsApp: "+ct.whatsapp,ct.email&&"E-posta: "+ct.email].filter(Boolean).join(" · "):"";
+        add(c,"div",t||"Karşı taraf iletişim bilgisi eklememiş.","meta").style.color="var(--ink)";
+      }
+      if(incoming&&x.status==="bekliyor") ["kabul","red"].forEach(st=>{
+        const b=add(c,"button",st==="kabul"?"Kabul et":"Reddet","btn"+(st==="red"?" alt":"")); b.type="button";
+        b.onclick=async()=>{ const u=await sb.from("requests").update({status:st}).eq("id",x.id); if(u.error) alert(u.error.message); else loadReq(); };
+      });
+      if(!incoming&&x.status==="bekliyor"){
+        const b=add(c,"button","Geri çek","btn del"); b.type="button";
+        b.onclick=async()=>{ if(!confirm("Talebi geri çekmek istiyor musun?")) return; const d=await sb.from("requests").delete().eq("id",x.id); if(d.error) alert(d.error.message); else loadReq(); };
+      }
+      box.appendChild(c);
+    });
+  };
+  sec("Gelen talepler",r.data.filter(x=>x.to_id===user.id),true);
+  sec("Gönderdiğim talepler",r.data.filter(x=>x.from_id===user.id),false);
 }
 
 async function loadDir(){
@@ -107,9 +166,12 @@ async function loadDir(){
   if($("fcat").value) q=q.contains("categories",[$("fcat").value]);
   if($("fvf").checked) q=q.eq("verified",true);
   const r=await q;
+  const mr=await sb.from("requests").select("to_id,status").eq("from_id",user.id), sent={};
+  (mr.data||[]).forEach(x=>{ sent[x.to_id]=x.status; });
+  const canSend=profile.role==="alan"&&profile.status==="onayli";
   dl.textContent="";
   if(r.error){ dm.textContent="Liste alınamadı: "+r.error.message; return; }
-  dm.textContent=r.data.length?r.data.length+" hizmet veren":"Bu filtrede onaylı hizmet veren yok.";
+  dm.textContent=(r.data.length?r.data.length+" hizmet veren.":"Bu filtrede onaylı hizmet veren yok.")+(profile.role==="alan"&&!canSend?" Talep göndermek için profilinin onaylanması gerekir.":"");
   r.data.forEach(p=>{
     const c=document.createElement("article"); c.className="card pc";
     const h=add(c,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
@@ -120,6 +182,10 @@ async function loadDir(){
     if(p.price_note) add(c,"div","Ücret: "+p.price_note,"meta");
     if(p.portfolio_url&&/^https?:\/\//i.test(p.portfolio_url)){
       const a=add(c,"a",p.portfolio_url); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
+    }
+    if(p.id!==user.id){
+      if(sent[p.id]) add(c,"div","Talebin: "+{bekliyor:"bekliyor",kabul:"kabul edildi",red:"reddedildi"}[sent[p.id]],"meta");
+      else if(canSend){ const b=add(c,"button","Talep gönder","btn"); b.type="button"; b.onclick=()=>openReq(c,b,p); }
     }
     dl.appendChild(c);
   });
@@ -204,6 +270,7 @@ $("fil").innerHTML='<option value="">Tüm iller</option>'+IL.map(i=>`<option>${i
 $("fcat").innerHTML='<option value="">Tüm kategoriler</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
 ["fil","fcat","fvf"].forEach(id=>$(id).addEventListener("change",loadDir));
 $("t-dir").onclick=()=>{ tab="dir"; draw(); };
+$("t-req").onclick=()=>{ tab="req"; draw(); };
 $("t-prof").onclick=()=>{ tab="prof"; if(profile) renderProfile(); draw(); };
 
 // Giriş / kayıt
