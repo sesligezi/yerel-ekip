@@ -36,13 +36,70 @@ a{color:var(--acc)}
 .meta{color:var(--muted);font-size:.9rem;margin:4px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chip{border:1px solid var(--line);border-radius:12px;padding:1px 10px;font-size:.82rem}
 .bio{white-space:pre-line;margin:6px 0}
+
+/* ---- Görsel yenileme ---- */
+:root{--bg:#f4f6f8;--panel:#fff;--ink:#16202e;--muted:#5b677a;--line:#e1e6ed;--acc:#0f766e;--warn:#c2410c;--sh:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141c;--panel:#18202c;--ink:#e9eef5;--muted:#9aa7ba;--line:#2a3445;--acc:#5eead4;--warn:#fb923c;--sh:none}}
+body{padding-bottom:88px}
+.hero{display:flex;gap:14px;align-items:center;padding:18px;margin-bottom:14px;border-radius:16px;background:linear-gradient(135deg,#0f766e,#1d4ed8);color:#fff}
+.hero h1{margin:0;font-size:1.5rem}.hero .sub{color:rgba(255,255,255,.88);margin:2px 0 0}
+.logo{font-size:2rem;width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+.card{border-radius:14px;box-shadow:var(--sh)}
+input,select,textarea{border-radius:10px;padding:10px 12px}
+.btn{border-radius:10px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.how div{background:var(--bg);border-radius:12px;padding:10px 6px;text-align:center;font-size:.8rem;color:var(--muted)}
+.how b{display:block;font-size:1.7rem}
+.big{font-size:2rem;line-height:1.2}
+.hd{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+.av.lg{width:64px;height:64px;font-size:1.4rem}
+.pc{transition:transform .15s}.pc:hover{transform:translateY(-1px)}
+@media (prefers-reduced-motion:reduce){.pc{transition:none}.pc:hover{transform:none}}
+.pc h3{display:block;margin:0 0 4px;font-size:1.1rem}
+.pc.st-kabul{border-left:4px solid #16a34a}.pc.st-bekliyor{border-left:4px solid #f59e0b}.pc.st-red{border-left:4px solid #dc2626}
+.chip{border:0;padding:3px 10px;background:hsl(var(--h) 70% 92%);color:hsl(var(--h) 55% 26%)}
+.badge{border:0;background:var(--line);padding:2px 10px}
+.badge.ok,.badge.s-onayli,.badge.s-kabul{background:#dcfce7;color:#166534}
+.badge.s-beklemede,.badge.s-bekliyor{background:#fef3c7;color:#92400e}
+.badge.s-reddedildi,.badge.s-red{background:#fee2e2;color:#991b1b}
+@media (prefers-color-scheme:dark){
+ .chip{background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 70% 86%)}
+ .badge.ok,.badge.s-onayli,.badge.s-kabul{background:#14532d;color:#bbf7d0}
+ .badge.s-beklemede,.badge.s-bekliyor{background:#713f12;color:#fde68a}
+ .badge.s-reddedildi,.badge.s-red{background:#7f1d1d;color:#fecaca}
+}
+.fchips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}
+.fc{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:18px;padding:6px 12px;font:inherit;font-size:.9rem;cursor:pointer}
+.fc.on{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+.fc:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.filters{grid-template-columns:1fr}.filters label:has(#fcat){display:none}
+.empty{text-align:center;color:var(--muted);padding:28px 8px}
+fieldset#rl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.rad{position:relative;flex-direction:column;align-items:center;text-align:center;gap:2px;border:2px solid var(--line);border-radius:14px;padding:14px 8px;margin:0;cursor:pointer}
+label.rad input{position:absolute;opacity:0}
+label.rad small{color:var(--muted);font-size:.8rem}
+label.rad:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+label.rad:has(input:focus-visible){outline:3px solid var(--ink)}
+label.rad:has(input:disabled:not(:checked)){opacity:.45}
+.pill{position:relative;display:inline-flex;margin:6px 6px 0 0;cursor:pointer}
+.pill input{position:absolute;opacity:0}
+.pill span{padding:5px 12px;border-radius:16px;border:2px solid transparent;background:hsl(var(--h) 70% 94%);color:hsl(var(--h) 55% 26%);font-size:.9rem}
+.pill input:checked+span{border-color:hsl(var(--h) 55% 38%);font-weight:600}
+.pill input:focus-visible+span{outline:3px solid var(--ink)}
+@media (prefers-color-scheme:dark){.pill span{background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 70% 86%)}.pill input:checked+span{border-color:hsl(var(--h) 70% 70%)}}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:4px;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs .btn,.tabs .btn.alt{flex:1;margin:0;background:transparent;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:600;padding:6px 2px;border-radius:10px}
+.tabs .btn.on{color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media (min-width:700px){.tabs{position:static;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}body{padding-bottom:16px}}
 </style>
 </head>
 <body>
-<h1>Yerel Ekip</h1>
-<p class="sub">Fotoğrafçı ve video ekipleriyle yerel hizmet verenleri buluşturur.</p>
+<header class="hero"><div class="logo" aria-hidden="true">🎬</div><div><h1>Yerel Ekip</h1><p class="sub">Çekim ekipleri ile yerel hizmet verenleri buluşturur.</p></div></header>
 
 <section class="card" id="authv" hidden>
+  <div class="how"><div><b>🎒</b>Yerel hizmet ver</div><div><b>🎬</b>Yerel ekip bul</div><div><b>🤝</b>Kabul et, buluş</div></div>
   <label>E-posta<input id="em" type="email" autocomplete="email"></label>
   <label>Şifre (en az 8 karakter)<input id="pw" type="password" autocomplete="current-password"></label>
   <button class="btn" id="signin" type="button">Giriş yap</button>
@@ -53,11 +110,12 @@ a{color:var(--acc)}
 <section id="appv" hidden>
   <div class="top"><span id="who"></span><button class="btn alt" id="out" type="button" style="margin:0">Çıkış</button></div>
   <nav class="tabs" id="tabs" hidden>
-    <button class="btn alt" id="t-dir" type="button">Hizmet verenler</button>
-    <button class="btn alt" id="t-req" type="button">Taleplerim</button>
-    <button class="btn alt" id="t-prof" type="button">Profilim</button>
+    <button class="btn alt" id="t-dir" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-5.2-7-11a7 7 0 1 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Hizmet verenler</span></button>
+    <button class="btn alt" id="t-req" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Taleplerim</span></button>
+    <button class="btn alt" id="t-prof" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span>Profilim</span></button>
   </nav>
   <div id="dirv" hidden>
+    <div class="fchips" id="fchips" role="group" aria-label="Kategori"></div>
     <div class="filters">
       <label>İl<select id="fil"></select></label>
       <label>Kategori<select id="fcat"></select></label>
@@ -80,6 +138,17 @@ const $=id=>document.getElementById(id);
 const sb=supabase.createClient(SB_URL,SB_KEY);
 let user=null, profile=null, contact=null, tab=null;
 
+const CE={"Yerel model":"🧍","Yaşam tarzı":"🌿","Rehberlik":"🧭","Yeme-içme":"🍲","Konaklama":"🏡","Ulaşım":"🚐","Diğer":"✨"};
+function hue(t){ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; }
+function av(name,cls){
+  const e=document.createElement("span"), h=hue(name||"");
+  e.className="av "+(cls||""); e.setAttribute("aria-hidden","true");
+  e.textContent=(name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toLocaleUpperCase("tr");
+  e.style.background=`linear-gradient(135deg,hsl(${h} 60% 45%),hsl(${(h+40)%360} 65% 36%))`;
+  return e;
+}
+function chip(parent,c){ const e=add(parent,"span",(CE[c]?CE[c]+" ":"")+c,"chip"); e.style.setProperty("--h",hue(c)); }
+function host(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return u; } }
 function add(p,tag,text,cls){ const e=document.createElement(tag); if(cls) e.className=cls; e.textContent=text; p.appendChild(e); return e; }
 const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; };
 
@@ -135,9 +204,11 @@ async function loadReq(){
     if(!list.length){ add(box,"p","Henüz talep yok.","meta"); return; }
     list.forEach(x=>{
       const o=names[other(x)]||{}, c=document.createElement("article"); c.className="card pc";
-      add(c,"h3",o.display_name||"Bilinmeyen kullanıcı");
-      add(c,"span",{bekliyor:"Bekliyor",kabul:"Kabul edildi",red:"Reddedildi"}[x.status],"badge"+(x.status==="kabul"?" ok":""));
-      add(c,"div",(o.il?o.il+" · ":"")+new Date(x.created_at).toLocaleDateString("tr-TR"),"meta");
+      c.classList.add("st-"+x.status);
+      const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(o.display_name||"?")); hd.appendChild(tx);
+      add(tx,"h3",o.display_name||"Bilinmeyen kullanıcı");
+      add(tx,"span",{bekliyor:"Bekliyor",kabul:"Kabul edildi",red:"Reddedildi"}[x.status],"badge s-"+x.status);
+      add(tx,"div",(o.il?"📍 "+o.il+" · ":"")+new Date(x.created_at).toLocaleDateString("tr-TR"),"meta");
       add(c,"p",x.message,"bio");
       if(x.status==="kabul"){
         const ct=cts[other(x)], t=ct?[ct.whatsapp&&"WhatsApp: "+ct.whatsapp,ct.email&&"E-posta: "+ct.email].filter(Boolean).join(" · "):"";
@@ -172,16 +243,18 @@ async function loadDir(){
   dl.textContent="";
   if(r.error){ dm.textContent="Liste alınamadı: "+r.error.message; return; }
   dm.textContent=(r.data.length?r.data.length+" hizmet veren.":"Bu filtrede onaylı hizmet veren yok.")+(profile.role==="alan"&&!canSend?" Talep göndermek için profilinin onaylanması gerekir.":"");
+  if(!r.data.length){ const e=add(dl,"div","","empty"); add(e,"div","🔍","big"); add(e,"p","Bu filtrede henüz kimse yok. Başka bir kategori ya da il dene."); }
   r.data.forEach(p=>{
     const c=document.createElement("article"); c.className="card pc";
-    const h=add(c,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
-    if(p.verified) add(c,"span","Doğrulanmış","badge ok");
-    add(c,"div",p.il+(p.ilce?" / "+p.ilce:""),"meta");
-    const cl=add(c,"div","","chips"); (p.categories||[]).forEach(x=>add(cl,"span",x,"chip"));
+    const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name)); hd.appendChild(tx);
+    const h=add(tx,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
+    if(p.verified) add(tx,"span","✓ Doğrulanmış","badge ok");
+    add(tx,"div","📍 "+p.il+(p.ilce?" / "+p.ilce:""),"meta");
+    const cl=add(c,"div","","chips"); (p.categories||[]).forEach(x=>chip(cl,x));
     if(p.bio) add(c,"p",p.bio,"bio");
-    if(p.price_note) add(c,"div","Ücret: "+p.price_note,"meta");
+    if(p.price_note) add(c,"div","💰 "+p.price_note,"meta");
     if(p.portfolio_url&&/^https?:\/\//i.test(p.portfolio_url)){
-      const a=add(c,"a",p.portfolio_url); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
+      const a=add(c,"a","🔗 "+host(p.portfolio_url)); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
     }
     if(p.id!==user.id){
       if(sent[p.id]) add(c,"div","Talebin: "+{bekliyor:"bekliyor",kabul:"kabul edildi",red:"reddedildi"}[sent[p.id]],"meta");
@@ -193,16 +266,17 @@ async function loadDir(){
 
 function renderProfile(){
   const p=profile, box=$("prof"); box.textContent="";
-  add(box,"h2",p.display_name).style.margin="0 0 6px";
+  const hd=add(box,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name,"lg")); hd.appendChild(tx);
+  add(tx,"h2",p.display_name).style.margin="0 0 6px";
   const b=document.createElement("div");
-  add(b,"span",{beklemede:"Onay bekliyor",onayli:"Onaylı",reddedildi:"Reddedildi"}[p.status],"badge"+(p.status==="onayli"?" ok":""));
-  if(p.verified) add(b,"span","Doğrulanmış","badge ok");
-  box.appendChild(b);
+  add(b,"span",{beklemede:"Onay bekliyor",onayli:"Onaylı",reddedildi:"Reddedildi"}[p.status],"badge s-"+p.status);
+  if(p.verified) add(b,"span","✓ Doğrulanmış","badge ok");
+  tx.appendChild(b);
   const row=(k,v)=>{ if(!v) return null; const d=document.createElement("div"); d.className="row"; add(d,"b",k); box.appendChild(d); return d; };
   const put=(k,v)=>{ const d=row(k,v); if(d) d.append(v); };
   put("Rol",p.role==="veren"?"Hizmet veren":"Hizmet alan");
   put("Konum",p.il+(p.ilce?" / "+p.ilce:""));
-  put("Kategoriler",(p.categories||[]).join(", "));
+  { const d=row("Kategoriler","x"); const cl=document.createElement("div"); cl.className="chips"; (p.categories||[]).forEach(x=>chip(cl,x)); d.appendChild(cl); }
   put("Tanıtım",p.bio);
   const pd=row("Portföy",p.portfolio_url);
   if(pd&&/^https?:\/\//i.test(p.portfolio_url)){ const a=document.createElement("a"); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=p.portfolio_url; pd.appendChild(a); } else if(pd) pd.append(p.portfolio_url);
@@ -220,13 +294,13 @@ function renderProfile(){
 function renderForm(edit){
   $("prof").innerHTML=`<form id="pf" novalidate>
   <fieldset id="rl"><legend>Ben</legend>
-   <label class="rad"><input type="radio" name="role" value="veren"> Hizmet veren (yerel model, rehber, yeme-içme, konaklama…)</label>
-   <label class="rad"><input type="radio" name="role" value="alan"> Hizmet alan (fotoğrafçı / video ekibi)</label>
+   <label class="rad"><input type="radio" name="role" value="veren"><span class="big">🎒</span><b>Hizmet veren</b><small>Yerel model, rehber, yeme-içme, konaklama…</small></label>
+   <label class="rad"><input type="radio" name="role" value="alan"><span class="big">🎬</span><b>Hizmet alan</b><small>Fotoğrafçı / video ekibi</small></label>
   </fieldset>
   <label>Görünen ad<input id="dn" maxlength="60"></label>
   <label>İl<select id="il"><option value="">Seç</option>${IL.map(i=>`<option>${i}</option>`).join("")}</select></label>
   <label>İlçe<input id="ilce" maxlength="60"></label>
-  <fieldset><legend>Kategoriler</legend>${CATS.map(c=>`<label class="chk"><input type="checkbox" name="cat" value="${c}"> ${c}</label>`).join("")}</fieldset>
+  <fieldset><legend>Kategoriler</legend>${CATS.map(c=>`<label class="pill" style="--h:${hue(c)}"><input type="checkbox" name="cat" value="${c}"><span>${CE[c]||""} ${c}</span></label>`).join("")}</fieldset>
   <label>Kısa tanıtım (en fazla 600 karakter)<textarea id="bio" maxlength="600" rows="4"></textarea></label>
   <label>Portföy / sosyal medya bağlantısı<input id="pu" type="url" placeholder="https://"></label>
   <label>Ücret notu (isteğe bağlı)<input id="pn" maxlength="200"></label>
@@ -268,7 +342,15 @@ async function save(e,edit){
 
 $("fil").innerHTML='<option value="">Tüm iller</option>'+IL.map(i=>`<option>${i}</option>`).join("");
 $("fcat").innerHTML='<option value="">Tüm kategoriler</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
-["fil","fcat","fvf"].forEach(id=>$(id).addEventListener("change",loadDir));
+function fchips(){
+  const box=$("fchips"); box.textContent="";
+  [["","Tümü"],...CATS.map(c=>[c,(CE[c]||"")+" "+c])].forEach(([v,t])=>{
+    const b=add(box,"button",t,"fc"+($("fcat").value===v?" on":"")); b.type="button";
+    b.onclick=()=>{ $("fcat").value=v; fchips(); loadDir(); };
+  });
+}
+fchips();
+["fil","fvf"].forEach(id=>$(id).addEventListener("change",loadDir));
 $("t-dir").onclick=()=>{ tab="dir"; draw(); };
 $("t-req").onclick=()=>{ tab="req"; draw(); };
 $("t-prof").onclick=()=>{ tab="prof"; if(profile) renderProfile(); draw(); };
