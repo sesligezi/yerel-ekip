@@ -73,7 +73,7 @@ input,select,textarea{border-radius:10px;padding:10px 12px}
 .fc{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:18px;padding:6px 12px;font:inherit;font-size:.9rem;cursor:pointer}
 .fc.on{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
 .fc:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.filters{grid-template-columns:1fr}.filters label:has(#fcat){display:none}
+.filters{grid-template-columns:1fr 1fr}
 .empty{text-align:center;color:var(--muted);padding:28px 8px}
 fieldset#rl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 label.rad{position:relative;flex-direction:column;align-items:center;text-align:center;gap:2px;border:2px solid var(--line);border-radius:14px;padding:14px 8px;margin:0;cursor:pointer}
@@ -102,10 +102,27 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
 .prov{fill:var(--line);stroke:var(--panel);stroke-width:.4;cursor:pointer;vector-effect:non-scaling-stroke}
 .prov:hover{stroke:var(--ink);stroke-width:1.2}.prov.sel{stroke:var(--ink);stroke-width:2.4}.prov:focus-visible{outline:none;stroke:var(--ink);stroke-width:2.4}
 .lbl{font:700 13px "Segoe UI",system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:var(--ink);stroke:var(--panel);stroke-width:3px;paint-order:stroke;stroke-linejoin:round}
+.hero{position:relative}
+.burger{margin-left:auto;flex:none;background:rgba(255,255,255,.18);border:0;color:#fff;width:44px;height:44px;border-radius:12px;cursor:pointer;display:grid;place-items:center}
+.burger svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.burger:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.menu{position:absolute;right:10px;top:calc(100% + 6px);z-index:20;min-width:240px;max-width:calc(100% - 20px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:6px}
+.mi{display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--ink);font:inherit;padding:11px 12px;border-radius:10px;cursor:pointer;text-decoration:none}
+.mi:hover,.mi:focus-visible{background:var(--bg)}.mi:focus-visible{outline:3px solid var(--ink)}
+.mi:disabled{color:var(--muted);cursor:default}.mi:disabled:hover{background:transparent}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);width:min(92vw,520px);padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.lgd{display:flex;gap:16px;padding:4px 8px 0;font-size:.82rem;color:var(--muted)}
+.lgd i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.bn{font:700 12px "Segoe UI",system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#fff}
+#s-veren small{color:var(--acc)}#s-alan small{color:var(--warn)}
 </style>
 </head>
 <body>
-<header class="hero"><div class="logo" aria-hidden="true">🎬</div><div><h1>Yerel Ekip</h1><p class="sub">Çekim ekipleri ile yerel hizmet verenleri buluşturur.</p></div></header>
+<header class="hero"><div class="logo" aria-hidden="true">🎬</div><div><h1>Yerel Ekip</h1><p class="sub">Çekim ekipleri ile yerel hizmet verenleri buluşturur.</p></div>
+  <button class="burger" id="bg" type="button" aria-label="Menü" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <nav class="menu" id="menu" aria-label="Bağlantılar" hidden></nav>
+</header>
 
 <section class="card" id="authv" hidden>
   <div class="how"><div><b>🎒</b>Yerel hizmet ver</div><div><b>🎬</b>Yerel ekip bul</div><div><b>🤝</b>Kabul et, buluş</div></div>
@@ -126,16 +143,16 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
   <div id="dirv" hidden>
     <div class="card mapc">
       <svg id="map" viewBox="0 0 1000 480" role="group" aria-label="Türkiye il haritası"></svg>
+      <div class="lgd"><span><i style="background:#0f766e"></i>Hizmet veren</span><span><i style="background:#c2410c"></i>Hizmet alan</span></div>
       <p class="meta" id="mapnote">Bir ile dokun, liste o ile göre süzülsün. Tekrar dokununca kaldırılır.</p>
     </div>
     <div class="seg" role="group" aria-label="Rol">
       <button type="button" id="s-veren" class="on">🎒 Hizmet verenler <small id="n-veren"></small></button>
       <button type="button" id="s-alan">🎬 Hizmet alanlar <small id="n-alan"></small></button>
     </div>
-    <div class="fchips" id="fchips" role="group" aria-label="Kategori"></div>
     <div class="filters">
       <label>İl<select id="fil"></select></label>
-      <input type="hidden" id="fcat" value="">
+      <label>Kategori<select id="fcat"></select></label>
       <label class="chk"><input type="checkbox" id="fvf"> Sadece doğrulanmış</label>
     </div>
     <p class="msg" id="dm" role="status" style="color:var(--muted)"></p>
@@ -145,6 +162,16 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
   <div class="card" id="prof"></div>
 </section>
 
+<dialog id="hdlg" aria-labelledby="hdt">
+  <h2 id="hdt" style="margin-top:0">Nasıl çalışır?</h2>
+  <ol style="padding-left:20px;line-height:1.6">
+    <li>Üye ol ve rolünü seç: hizmet veren ya da hizmet alan (fotoğrafçı veya videographer).</li>
+    <li>Profilini doldur. İncelendikten sonra yayınlanır.</li>
+    <li>Hizmet alan, haritadan veya listeden hizmet veren bulur ve talep gönderir.</li>
+    <li>Hizmet veren talebi kabul ederse iki taraf birbirinin iletişim bilgisini görür.</li>
+  </ol>
+  <button class="btn" type="button" id="hdc">Tamam</button>
+</dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const SB_URL="https://hknnurwiwdgvrvlzwveq.supabase.co";
@@ -153,6 +180,13 @@ const PLATE=["Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","An
 const IL=[...PLATE].sort((a,b)=>a.localeCompare(b,"tr"));
 const CATS_V=["Yerel Model","Barınma","Yerel Rehberlik","Ulaşım","Yeme İçme","Çekim Mekanı"], CATS_A=["Fotoğrafçı","Videographer"];
 const catsFor=r=>r==="alan"?CATS_A:CATS_V;
+// Menü bağlantıları: u = adres (boşsa "yakında" görünür), d = açılır pencere
+const MENU=[
+  {t:"Nasıl çalışır?",d:1},
+  {t:"Kullanım şartları",u:""},
+  {t:"KVKK aydınlatma metni",u:""},
+  {t:"Şikâyet / İletişim",u:""}
+];
 const $=id=>document.getElementById(id);
 const sb=supabase.createClient(SB_URL,SB_KEY);
 let user=null, profile=null, contact=null, tab=null;
@@ -169,7 +203,7 @@ function av(name,cls){
 function chip(parent,c){ const e=add(parent,"span",(CE[c]?CE[c]+" ":"")+c,"chip"); e.style.setProperty("--h",hue(c)); }
 function host(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return u; } }
 function add(p,tag,text,cls){ const e=document.createElement(tag); if(cls) e.className=cls; e.textContent=text; p.appendChild(e); return e; }
-const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; };
+const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; buildMenu(); };
 
 async function refresh(){
   if(!user){ tab=null; dirLoaded=false; view("auth"); return; }
@@ -249,7 +283,6 @@ async function loadReq(){
 }
 
 let dirRole="veren", dirData={veren:[],alan:[]}, dirSent={}, dirLoaded=false, mapReady=false, cent={};
-const mapColor=n=>n>=15?"#134e4a":n>=5?"#0f766e":n>=2?"#34b8a5":"#99e6dc";
 
 async function loadDir(){
   if(!dirLoaded) $("dm").textContent="Yükleniyor…";
@@ -269,7 +302,7 @@ async function loadDir(){
 function renderDir(){
   const dl=$("dl"), role=dirRole, il=$("fil").value, cat=$("fcat").value, vf=$("fvf").checked;
   ["veren","alan"].forEach(r=>{ $("s-"+r).classList.toggle("on",r===role); $("n-"+r).textContent=dirData[r].length; });
-  fchips(); paintMap();
+  fillCat(); paintMap();
   const list=dirData[role].filter(p=>(!il||p.il===il)&&(!cat||(p.categories||[]).includes(cat))&&(!vf||p.verified));
   const canSend=profile.role==="alan"&&profile.status==="onayli"&&role==="veren";
   $("dm").textContent=list.length+(role==="veren"?" hizmet veren":" hizmet alan")+(il?" · "+il:"")+(profile.role==="alan"&&profile.status!=="onayli"?". Talep göndermek için profilinin onaylanması gerekir.":"");
@@ -295,12 +328,11 @@ function renderDir(){
   });
 }
 
-function fchips(){
-  const box=$("fchips"); box.textContent="";
-  [["","Tümü"],...catsFor(dirRole).map(c=>[c,(CE[c]||"")+" "+c])].forEach(([v,t])=>{
-    const b=add(box,"button",t,"fc"+($("fcat").value===v?" on":"")); b.type="button";
-    b.onclick=()=>{ $("fcat").value=v; renderDir(); };
-  });
+let catRole=null;
+function fillCat(){
+  if(catRole===dirRole) return;
+  catRole=dirRole;
+  $("fcat").innerHTML='<option value="">Tüm kategoriler</option>'+catsFor(dirRole).map(c=>`<option value="${c}">${CE[c]||""} ${c}</option>`).join("");
 }
 
 async function initMap(){
@@ -338,17 +370,25 @@ async function initMap(){
 function pickIl(n){ const name=PLATE[n-1]; $("fil").value=$("fil").value===name?"":name; renderDir(); }
 function paintMap(){
   const svg=$("map"), els=svg.querySelectorAll(".prov"); if(!els.length) return;
-  const cnt={}; dirData[dirRole].forEach(p=>{ cnt[p.il]=(cnt[p.il]||0)+1; });
+  const cv={}, ca={};
+  dirData.veren.forEach(p=>{ cv[p.il]=(cv[p.il]||0)+1; }); dirData.alan.forEach(p=>{ ca[p.il]=(ca[p.il]||0)+1; });
   els.forEach(el=>{
-    const name=PLATE[el.dataset.plate-1], n=cnt[name]||0;
-    el.style.fill=n?mapColor(n):""; el.classList.toggle("sel",$("fil").value===name);
-    el.querySelector("title").textContent=name+": "+n+(dirRole==="veren"?" hizmet veren":" hizmet alan");
+    const name=PLATE[el.dataset.plate-1], v=cv[name]||0, a=ca[name]||0;
+    el.style.fill=!v&&!a?"":(v>=a?"#a7ede4":"#fed7aa"); el.classList.toggle("sel",$("fil").value===name);
+    el.querySelector("title").textContent=name+": "+v+" hizmet veren, "+a+" hizmet alan";
   });
   const old=svg.querySelector("#lbls"); if(old) old.remove();
   const NS="http://www.w3.org/2000/svg", g=document.createElementNS(NS,"g"); g.id="lbls"; g.setAttribute("pointer-events","none");
-  Object.keys(cnt).forEach(il=>{
+  new Set([...Object.keys(cv),...Object.keys(ca)]).forEach(il=>{
     const c=cent[PLATE.indexOf(il)+1]; if(!c) return;
-    const t=document.createElementNS(NS,"text"); t.setAttribute("x",c[0].toFixed(1)); t.setAttribute("y",c[1].toFixed(1)); t.setAttribute("class","lbl"); t.textContent=cnt[il]; g.appendChild(t);
+    const items=[[cv[il],"#0f766e"],[ca[il],"#c2410c"]].filter(x=>x[0]);
+    items.forEach(([n,col],i)=>{
+      const x=c[0]+(items.length===2?(i?13:-13):0), y=c[1].toFixed(1);
+      const o=document.createElementNS(NS,"circle");
+      o.setAttribute("cx",x.toFixed(1)); o.setAttribute("cy",y); o.setAttribute("r","12"); o.setAttribute("fill",col); o.setAttribute("stroke","#fff"); o.setAttribute("stroke-width","1.5");
+      const t=document.createElementNS(NS,"text"); t.setAttribute("x",x.toFixed(1)); t.setAttribute("y",y); t.setAttribute("class","bn"); t.textContent=n;
+      g.appendChild(o); g.appendChild(t);
+    });
   });
   svg.appendChild(g);
 }
@@ -378,6 +418,18 @@ function renderProfile(){
     const r=await sb.from("profiles").delete().eq("id",user.id);
     if(r.error) alert("Silinemedi: "+r.error.message); else refresh();
   };
+}
+
+function closeMenu(){ $("menu").hidden=true; $("bg").setAttribute("aria-expanded","false"); }
+function buildMenu(){
+  const m=$("menu"); m.textContent="";
+  MENU.forEach(i=>{
+    let el;
+    if(i.u){ el=document.createElement("a"); el.href=i.u; if(/^https?:/i.test(i.u)){ el.target="_blank"; el.rel="noopener noreferrer"; } }
+    else { el=document.createElement("button"); el.type="button"; if(i.d) el.onclick=()=>{ closeMenu(); $("hdlg").showModal(); }; else el.disabled=true; }
+    el.className="mi"; el.textContent=i.t+(!i.u&&!i.d?" (yakında)":""); m.appendChild(el);
+  });
+  if(user){ const o=add(m,"button","Çıkış yap","mi"); o.type="button"; o.onclick=()=>{ closeMenu(); sb.auth.signOut(); }; }
 }
 
 function catUI(role){
@@ -440,12 +492,20 @@ async function save(e,edit){
 }
 
 $("fil").innerHTML='<option value="">Tüm iller</option>'+IL.map(i=>`<option>${i}</option>`).join("");
-fchips();
-["fil","fvf"].forEach(id=>$(id).addEventListener("change",renderDir));
+["fil","fcat","fvf"].forEach(id=>$(id).addEventListener("change",renderDir));
 ["veren","alan"].forEach(r=>{ $("s-"+r).onclick=()=>{ dirRole=r; $("fcat").value=""; renderDir(); }; });
 $("t-dir").onclick=()=>{ tab="dir"; draw(); };
 $("t-req").onclick=()=>{ tab="req"; draw(); };
 $("t-prof").onclick=()=>{ tab="prof"; if(profile) renderProfile(); draw(); };
+
+$("bg").onclick=e=>{
+  e.stopPropagation();
+  const open=$("menu").hidden; $("menu").hidden=!open; $("bg").setAttribute("aria-expanded",String(open));
+  if(open){ const f=$("menu").querySelector(".mi:not([disabled])"); if(f) f.focus(); }
+};
+document.addEventListener("click",e=>{ if(!e.target.closest("#menu")) closeMenu(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeMenu(); });
+$("hdc").onclick=()=>$("hdlg").close();
 
 // Giriş / kayıt
 const am=t=>{ $("am").textContent=t; };
