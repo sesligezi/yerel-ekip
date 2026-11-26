@@ -93,6 +93,15 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
 .tabs .btn.on{color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media (min-width:700px){.tabs{position:static;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}body{padding-bottom:16px}}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--line);padding:4px;border-radius:14px;margin:12px 0}
+.seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:600;padding:10px 6px;border-radius:10px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:var(--sh)}
+.seg button:focus-visible{outline:3px solid var(--ink)}
+.seg small{margin-left:4px;color:var(--acc)}
+.mapc{padding:8px}.mapc svg{width:100%;height:auto;display:block}.mapc .meta{margin:4px 6px 2px;font-size:.82rem}
+.prov{fill:var(--line);stroke:var(--panel);stroke-width:.4;cursor:pointer;vector-effect:non-scaling-stroke}
+.prov:hover{stroke:var(--ink);stroke-width:1.2}.prov.sel{stroke:var(--ink);stroke-width:2.4}.prov:focus-visible{outline:none;stroke:var(--ink);stroke-width:2.4}
+.lbl{font:700 13px "Segoe UI",system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:var(--ink);stroke:var(--panel);stroke-width:3px;paint-order:stroke;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -115,10 +124,18 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
     <button class="btn alt" id="t-prof" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span>Profilim</span></button>
   </nav>
   <div id="dirv" hidden>
+    <div class="card mapc">
+      <svg id="map" viewBox="0 0 1000 480" role="group" aria-label="Türkiye il haritası"></svg>
+      <p class="meta" id="mapnote">Bir ile dokun, liste o ile göre süzülsün. Tekrar dokununca kaldırılır.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Rol">
+      <button type="button" id="s-veren" class="on">🎒 Hizmet verenler <small id="n-veren"></small></button>
+      <button type="button" id="s-alan">🎬 Hizmet alanlar <small id="n-alan"></small></button>
+    </div>
     <div class="fchips" id="fchips" role="group" aria-label="Kategori"></div>
     <div class="filters">
       <label>İl<select id="fil"></select></label>
-      <label>Kategori<select id="fcat"></select></label>
+      <input type="hidden" id="fcat" value="">
       <label class="chk"><input type="checkbox" id="fvf"> Sadece doğrulanmış</label>
     </div>
     <p class="msg" id="dm" role="status" style="color:var(--muted)"></p>
@@ -132,13 +149,15 @@ label.rad:has(input:disabled:not(:checked)){opacity:.45}
 <script>
 const SB_URL="https://hknnurwiwdgvrvlzwveq.supabase.co";
 const SB_KEY="sb_publishable_7M7F5ZmzPgTIVIY0t3304g_N-2iuJzS";
-const IL=["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ankara","Antalya","Ardahan","Artvin","Aydın","Balıkesir","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkâri","Hatay","Iğdır","Isparta","İstanbul","İzmir","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kayseri","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Konya","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Şanlıurfa","Şırnak","Tekirdağ","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"];
-const CATS=["Yerel model","Yaşam tarzı","Rehberlik","Yeme-içme","Konaklama","Ulaşım","Diğer"];
+const PLATE=["Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkâri","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"];
+const IL=[...PLATE].sort((a,b)=>a.localeCompare(b,"tr"));
+const CATS_V=["Yerel Model","Barınma","Yerel Rehberlik","Ulaşım","Yeme İçme","Çekim Mekanı"], CATS_A=["Fotoğrafçı","Videographer"];
+const catsFor=r=>r==="alan"?CATS_A:CATS_V;
 const $=id=>document.getElementById(id);
 const sb=supabase.createClient(SB_URL,SB_KEY);
 let user=null, profile=null, contact=null, tab=null;
 
-const CE={"Yerel model":"🧍","Yaşam tarzı":"🌿","Rehberlik":"🧭","Yeme-içme":"🍲","Konaklama":"🏡","Ulaşım":"🚐","Diğer":"✨"};
+const CE={"Yerel Model":"🧍","Barınma":"🏡","Yerel Rehberlik":"🧭","Ulaşım":"🚐","Yeme İçme":"🍲","Çekim Mekanı":"🏞️","Fotoğrafçı":"📸","Videographer":"🎥"};
 function hue(t){ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; }
 function av(name,cls){
   const e=document.createElement("span"), h=hue(name||"");
@@ -153,7 +172,7 @@ function add(p,tag,text,cls){ const e=document.createElement(tag); if(cls) e.cla
 const view=a=>{ $("authv").hidden=a!=="auth"; $("appv").hidden=a!=="app"; };
 
 async function refresh(){
-  if(!user){ tab=null; view("auth"); return; }
+  if(!user){ tab=null; dirLoaded=false; view("auth"); return; }
   view("app"); $("who").textContent=user.email;
   const p=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
   if(p.error){ $("prof").textContent="Profil alınamadı: "+p.error.message; return; }
@@ -167,7 +186,7 @@ async function refresh(){
 function draw(){
   $("tabs").hidden=!profile; $("dirv").hidden=tab!=="dir"; $("reqv").hidden=tab!=="req"; $("prof").hidden=tab!=="prof";
   ["dir","req","prof"].forEach(t=>$("t-"+t).classList.toggle("on",tab===t));
-  if(tab==="dir") loadDir(); else if(tab==="req") loadReq();
+  if(tab==="dir"){ if(dirLoaded) renderDir(); loadDir(); } else if(tab==="req") loadReq();
 }
 
 function openReq(card,btn,p){
@@ -229,22 +248,34 @@ async function loadReq(){
   sec("Gönderdiğim talepler",r.data.filter(x=>x.from_id===user.id),false);
 }
 
+let dirRole="veren", dirData={veren:[],alan:[]}, dirSent={}, dirLoaded=false, mapReady=false, cent={};
+const mapColor=n=>n>=15?"#134e4a":n>=5?"#0f766e":n>=2?"#34b8a5":"#99e6dc";
+
 async function loadDir(){
-  const dm=$("dm"), dl=$("dl"); dm.textContent="Yükleniyor…";
-  let q=sb.from("profiles").select("id,display_name,il,ilce,categories,bio,portfolio_url,price_note,verified")
-    .eq("role","veren").eq("status","onayli").order("verified",{ascending:false}).order("created_at",{ascending:false}).limit(60);
-  if($("fil").value) q=q.eq("il",$("fil").value);
-  if($("fcat").value) q=q.contains("categories",[$("fcat").value]);
-  if($("fvf").checked) q=q.eq("verified",true);
-  const r=await q;
-  const mr=await sb.from("requests").select("to_id,status").eq("from_id",user.id), sent={};
-  (mr.data||[]).forEach(x=>{ sent[x.to_id]=x.status; });
-  const canSend=profile.role==="alan"&&profile.status==="onayli";
+  if(!dirLoaded) $("dm").textContent="Yükleniyor…";
+  const [a,b]=await Promise.all([
+    sb.from("profiles").select("id,role,display_name,il,ilce,categories,bio,portfolio_url,price_note,verified").eq("status","onayli")
+      .order("verified",{ascending:false}).order("created_at",{ascending:false}).limit(500),
+    sb.from("requests").select("to_id,status").eq("from_id",user.id)
+  ]);
+  if(a.error){ $("dm").textContent="Liste alınamadı: "+a.error.message; return; }
+  dirData={veren:[],alan:[]}; a.data.forEach(p=>{ if(dirData[p.role]) dirData[p.role].push(p); });
+  dirSent={}; (b.data||[]).forEach(x=>{ dirSent[x.to_id]=x.status; });
+  dirLoaded=true;
+  if(!mapReady) initMap();
+  renderDir();
+}
+
+function renderDir(){
+  const dl=$("dl"), role=dirRole, il=$("fil").value, cat=$("fcat").value, vf=$("fvf").checked;
+  ["veren","alan"].forEach(r=>{ $("s-"+r).classList.toggle("on",r===role); $("n-"+r).textContent=dirData[r].length; });
+  fchips(); paintMap();
+  const list=dirData[role].filter(p=>(!il||p.il===il)&&(!cat||(p.categories||[]).includes(cat))&&(!vf||p.verified));
+  const canSend=profile.role==="alan"&&profile.status==="onayli"&&role==="veren";
+  $("dm").textContent=list.length+(role==="veren"?" hizmet veren":" hizmet alan")+(il?" · "+il:"")+(profile.role==="alan"&&profile.status!=="onayli"?". Talep göndermek için profilinin onaylanması gerekir.":"");
   dl.textContent="";
-  if(r.error){ dm.textContent="Liste alınamadı: "+r.error.message; return; }
-  dm.textContent=(r.data.length?r.data.length+" hizmet veren.":"Bu filtrede onaylı hizmet veren yok.")+(profile.role==="alan"&&!canSend?" Talep göndermek için profilinin onaylanması gerekir.":"");
-  if(!r.data.length){ const e=add(dl,"div","","empty"); add(e,"div","🔍","big"); add(e,"p","Bu filtrede henüz kimse yok. Başka bir kategori ya da il dene."); }
-  r.data.forEach(p=>{
+  if(!list.length){ const e=add(dl,"div","","empty"); add(e,"div","🔍","big"); add(e,"p","Bu filtrede henüz kimse yok. Başka bir kategori ya da il dene."); }
+  list.forEach(p=>{
     const c=document.createElement("article"); c.className="card pc";
     const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name)); hd.appendChild(tx);
     const h=add(tx,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
@@ -256,12 +287,70 @@ async function loadDir(){
     if(p.portfolio_url&&/^https?:\/\//i.test(p.portfolio_url)){
       const a=add(c,"a","🔗 "+host(p.portfolio_url)); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
     }
-    if(p.id!==user.id){
-      if(sent[p.id]) add(c,"div","Talebin: "+{bekliyor:"bekliyor",kabul:"kabul edildi",red:"reddedildi"}[sent[p.id]],"meta");
+    if(p.id!==user.id&&role==="veren"){
+      if(dirSent[p.id]) add(c,"div","Talebin: "+{bekliyor:"bekliyor",kabul:"kabul edildi",red:"reddedildi"}[dirSent[p.id]],"meta");
       else if(canSend){ const b=add(c,"button","Talep gönder","btn"); b.type="button"; b.onclick=()=>openReq(c,b,p); }
     }
     dl.appendChild(c);
   });
+}
+
+function fchips(){
+  const box=$("fchips"); box.textContent="";
+  [["","Tümü"],...catsFor(dirRole).map(c=>[c,(CE[c]||"")+" "+c])].forEach(([v,t])=>{
+    const b=add(box,"button",t,"fc"+($("fcat").value===v?" on":"")); b.type="button";
+    b.onclick=()=>{ $("fcat").value=v; renderDir(); };
+  });
+}
+
+async function initMap(){
+  mapReady=true;
+  try{
+    const r=await fetch("iller.json"); if(!r.ok) throw new Error("yok");
+    const g=await r.json(), svg=$("map"), pts=[], NS="http://www.w3.org/2000/svg";
+    const eachRing=(geom,fn)=>(geom.type==="Polygon"?[geom.coordinates]:geom.coordinates).forEach(p=>p.forEach(fn));
+    g.features.forEach(f=>eachRing(f.geometry,q=>q.forEach(x=>pts.push(x))));
+    const lons=pts.map(x=>x[0]), lats=pts.map(x=>x[1]), minX=Math.min(...lons), maxY=Math.max(...lats), k=Math.cos(39*Math.PI/180);
+    const w=(Math.max(...lons)-minX)*k, h=maxY-Math.min(...lats), sc=Math.min(980/w,460/h);
+    const X=x=>10+(x-minX)*k*sc, Y=y=>10+(maxY-y)*sc;
+    svg.setAttribute("viewBox",`0 0 ${Math.ceil(w*sc+20)} ${Math.ceil(h*sc+20)}`);
+    g.features.forEach(f=>{
+      let d="", best=0, c=null;
+      eachRing(f.geometry,q=>{
+        const m=q.map(x=>[X(x[0]),Y(x[1])]);
+        d+="M"+m.map(x=>x[0].toFixed(1)+" "+x[1].toFixed(1)).join("L")+"Z";
+        let a=0,cx=0,cy=0;
+        for(let i=0;i<m.length-1;i++){ const t=m[i][0]*m[i+1][1]-m[i+1][0]*m[i][1]; a+=t; cx+=(m[i][0]+m[i+1][0])*t; cy+=(m[i][1]+m[i+1][1])*t; }
+        if(a&&Math.abs(a)>best){ best=Math.abs(a); c=[cx/(3*a),cy/(3*a)]; }
+      });
+      const n=f.properties.number; cent[n]=c;
+      const el=document.createElementNS(NS,"path");
+      el.setAttribute("d",d); el.setAttribute("class","prov"); el.setAttribute("tabindex","0"); el.setAttribute("role","button");
+      el.setAttribute("aria-label",PLATE[n-1]); el.dataset.plate=n;
+      el.appendChild(document.createElementNS(NS,"title"));
+      el.addEventListener("click",()=>pickIl(n));
+      el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pickIl(n); } });
+      svg.appendChild(el);
+    });
+    paintMap();
+  }catch(e){ $("mapnote").textContent="Harita dosyası (iller.json) yüklenemedi. Dosyayı index.html ile aynı klasöre yükle."; }
+}
+function pickIl(n){ const name=PLATE[n-1]; $("fil").value=$("fil").value===name?"":name; renderDir(); }
+function paintMap(){
+  const svg=$("map"), els=svg.querySelectorAll(".prov"); if(!els.length) return;
+  const cnt={}; dirData[dirRole].forEach(p=>{ cnt[p.il]=(cnt[p.il]||0)+1; });
+  els.forEach(el=>{
+    const name=PLATE[el.dataset.plate-1], n=cnt[name]||0;
+    el.style.fill=n?mapColor(n):""; el.classList.toggle("sel",$("fil").value===name);
+    el.querySelector("title").textContent=name+": "+n+(dirRole==="veren"?" hizmet veren":" hizmet alan");
+  });
+  const old=svg.querySelector("#lbls"); if(old) old.remove();
+  const NS="http://www.w3.org/2000/svg", g=document.createElementNS(NS,"g"); g.id="lbls"; g.setAttribute("pointer-events","none");
+  Object.keys(cnt).forEach(il=>{
+    const c=cent[PLATE.indexOf(il)+1]; if(!c) return;
+    const t=document.createElementNS(NS,"text"); t.setAttribute("x",c[0].toFixed(1)); t.setAttribute("y",c[1].toFixed(1)); t.setAttribute("class","lbl"); t.textContent=cnt[il]; g.appendChild(t);
+  });
+  svg.appendChild(g);
 }
 
 function renderProfile(){
@@ -291,6 +380,16 @@ function renderProfile(){
   };
 }
 
+function catUI(role){
+  const box=$("catbox"); box.textContent="";
+  $("cl").textContent=role==="alan"?"Uzmanlığın (birini seç)":"Hizmet kategorileri (bir ya da daha fazla)";
+  catsFor(role).forEach(c=>{
+    const l=document.createElement("label"); l.className="pill"; l.style.setProperty("--h",hue(c));
+    const i=document.createElement("input"); i.type=role==="alan"?"radio":"checkbox"; i.name="cat"; i.value=c;
+    add(l,"span",(CE[c]||"")+" "+c); l.prepend(i); box.appendChild(l);
+  });
+}
+
 function renderForm(edit){
   $("prof").innerHTML=`<form id="pf" novalidate>
   <fieldset id="rl"><legend>Ben</legend>
@@ -300,7 +399,7 @@ function renderForm(edit){
   <label>Görünen ad<input id="dn" maxlength="60"></label>
   <label>İl<select id="il"><option value="">Seç</option>${IL.map(i=>`<option>${i}</option>`).join("")}</select></label>
   <label>İlçe<input id="ilce" maxlength="60"></label>
-  <fieldset><legend>Kategoriler</legend>${CATS.map(c=>`<label class="pill" style="--h:${hue(c)}"><input type="checkbox" name="cat" value="${c}"><span>${CE[c]||""} ${c}</span></label>`).join("")}</fieldset>
+  <fieldset><legend id="cl">Kategori</legend><div id="catbox"><p class="meta">Önce yukarıdan rolünü seç.</p></div></fieldset>
   <label>Kısa tanıtım (en fazla 600 karakter)<textarea id="bio" maxlength="600" rows="4"></textarea></label>
   <label>Portföy / sosyal medya bağlantısı<input id="pu" type="url" placeholder="https://"></label>
   <label>Ücret notu (isteğe bağlı)<input id="pn" maxlength="200"></label>
@@ -317,10 +416,10 @@ function renderForm(edit){
     document.querySelectorAll("input[name=role]").forEach(r=>r.disabled=true);
     $("dn").value=p.display_name; $("il").value=p.il; $("ilce").value=p.ilce||""; $("bio").value=p.bio||"";
     $("pu").value=p.portfolio_url||""; $("pn").value=p.price_note||"";
-    document.querySelectorAll("input[name=cat]").forEach(c=>{ c.checked=(p.categories||[]).includes(c.value); });
+    catUI(p.role); document.querySelectorAll("input[name=cat]").forEach(c=>{ c.checked=(p.categories||[]).includes(c.value); });
     if(contact){ $("wa").value=contact.whatsapp||""; $("ce").value=contact.email||""; }
     $("rz").hidden=true; $("cn").onclick=renderProfile;
-  } else $("cn").hidden=true;
+  } else { $("cn").hidden=true; document.querySelectorAll("input[name=role]").forEach(r=>{ r.onchange=()=>catUI(r.value); }); }
   $("pf").onsubmit=e=>save(e,edit);
 }
 
@@ -341,16 +440,9 @@ async function save(e,edit){
 }
 
 $("fil").innerHTML='<option value="">Tüm iller</option>'+IL.map(i=>`<option>${i}</option>`).join("");
-$("fcat").innerHTML='<option value="">Tüm kategoriler</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
-function fchips(){
-  const box=$("fchips"); box.textContent="";
-  [["","Tümü"],...CATS.map(c=>[c,(CE[c]||"")+" "+c])].forEach(([v,t])=>{
-    const b=add(box,"button",t,"fc"+($("fcat").value===v?" on":"")); b.type="button";
-    b.onclick=()=>{ $("fcat").value=v; fchips(); loadDir(); };
-  });
-}
 fchips();
-["fil","fvf"].forEach(id=>$(id).addEventListener("change",loadDir));
+["fil","fvf"].forEach(id=>$(id).addEventListener("change",renderDir));
+["veren","alan"].forEach(r=>{ $("s-"+r).onclick=()=>{ dirRole=r; $("fcat").value=""; renderDir(); }; });
 $("t-dir").onclick=()=>{ tab="dir"; draw(); };
 $("t-req").onclick=()=>{ tab="req"; draw(); };
 $("t-prof").onclick=()=>{ tab="prof"; if(profile) renderProfile(); draw(); };
