@@ -119,27 +119,35 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .bn{font:700 12px "Segoe UI",system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#fff}
 #s-veren small{color:var(--acc)}#s-alan small{color:var(--warn)}
 /* ---- Krem tema: başlık ve kartlar ---- */
-.hero{background:linear-gradient(135deg,#fffaf0 0%,#ffefc2 100%);color:#2b2417;border:1px solid #f0dca8;border-radius:18px}
-.hero .sub{color:#6b5d3f}
+.hero{background:linear-gradient(135deg,#eef3f5 0%,#dee7e9 100%);color:#1f2a33;border:1px solid #cbd8dd;border-radius:18px}
+.hero .sub{color:#51636f}
 .logo{background:#1f2937;font-size:0;padding:5px}
 .logo img{width:44px;height:44px;display:block}
-.burger{background:rgba(43,36,23,.08);color:#2b2417}
-.burger:focus-visible{outline:3px solid #2b2417}
+.burger{background:rgba(31,42,51,.08);color:#1f2a33}
+.burger:focus-visible{outline:3px solid #1f2a33}
 .mi.pri{background:var(--acc);color:var(--bg);font-weight:700;text-align:center;margin-bottom:4px}
-.card.pc{background:linear-gradient(135deg,#fffaf0 0%,#ffefc7 100%);border:1px solid #f0dca8;border-radius:18px;color:#2b2417}
+.card.pc{background:linear-gradient(135deg,#eef3f5 0%,#dee7e9 100%);border:1px solid #cbd8dd;border-radius:18px;color:#1f2a33}
 .pc h3{font-weight:700}
 .nm-veren{color:#0f766e}.nm-alan{color:#c2410c}
-.pc .meta,.pc .you,.pc label{color:#6b5d3f}
+.pc .meta,.pc .you,.pc label{color:#51636f}
 .pc a{color:#0f5f58}
 .pc .chip{background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 55% 24%)}
-.pc .badge{background:rgba(43,36,23,.08);color:#3b2f12}
+.pc .badge{background:rgba(31,42,51,.08);color:#1f2a33}
 .pc .badge.ok,.pc .badge.s-onayli,.pc .badge.s-kabul{background:#dcfce7;color:#166534}
 .pc .badge.s-beklemede,.pc .badge.s-bekliyor{background:#fef3c7;color:#92400e}
 .pc .badge.s-reddedildi,.pc .badge.s-red{background:#fee2e2;color:#991b1b}
 .pc .btn{background:#0f766e;color:#fff}
-.pc .btn.alt{background:transparent;color:#2b2417;border:2px solid #2b2417}
+.pc .btn.alt{background:transparent;color:#1f2a33;border:2px solid #1f2a33}
 .pc .btn.del{background:transparent;color:#b91c1c;border:2px solid #b91c1c}
-.pc textarea{background:#fffdf7;color:#2b2417;border-color:#e6d3a0}
+.pc textarea{background:#f7fafb;color:#1f2a33;border-color:#c5d3da}
+.hero,.card.pc{box-shadow:0 2px 4px rgba(20,40,50,.07),0 10px 22px rgba(20,40,50,.13)}
+.hint{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.hint.ok{color:#16a34a}.hint.bad{color:var(--warn)}
+.row{white-space:pre-line;overflow-wrap:anywhere}
+.bio{overflow-wrap:anywhere}
+.bio.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.more{background:none;border:0;color:#0f5f58;font:inherit;font-weight:600;padding:0;margin:0 0 6px;cursor:pointer;text-decoration:underline}
+.links{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0}
 </style>
 </head>
 <body>
@@ -311,7 +319,7 @@ let dirRole="veren", dirData={veren:[],alan:[]}, dirSent={}, dirLoaded=false, ma
 async function loadDir(){
   if(!dirLoaded) $("dm").textContent="Yükleniyor…";
   const [a,b]=await Promise.all([
-    sb.from("profiles").select("id,role,display_name,il,ilce,categories,bio,portfolio_url,price_note,verified").eq("status","onayli")
+    sb.from("profiles").select("id,role,display_name,il,ilce,meslek,categories,bio,portfolio_url,social2_url,price_note,verified").eq("status","onayli")
       .order("verified",{ascending:false}).order("created_at",{ascending:false}).limit(500),
     sb.from("requests").select("to_id,status").eq("from_id",user.id)
   ]);
@@ -338,12 +346,18 @@ function renderDir(){
     const h=add(tx,"h3",p.display_name,"nm-"+p.role); if(p.id===user.id) add(h,"span"," (sen)","you");
     if(p.verified) add(tx,"span","✓ Doğrulanmış","badge ok");
     add(tx,"div","📍 "+p.il+(p.ilce?" / "+p.ilce:""),"meta");
+    if(p.meslek) add(tx,"div","💼 "+p.meslek,"meta");
     const cl=add(c,"div","","chips"); (p.categories||[]).forEach(x=>chip(cl,x));
-    if(p.bio) add(c,"p",p.bio,"bio");
-    if(p.price_note) add(c,"div","💰 "+p.price_note,"meta");
-    if(p.portfolio_url&&/^https?:\/\//i.test(p.portfolio_url)){
-      const a=add(c,"a","🔗 "+host(p.portfolio_url)); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer";
+    if(p.bio){
+      const bp=add(c,"p",p.bio,"bio clamp");
+      if((p.bio.match(/\S+/g)||[]).length>45){
+        const t=add(c,"button","Devamını oku","more"); t.type="button"; t.setAttribute("aria-expanded","false");
+        t.onclick=()=>{ const closed=bp.classList.toggle("clamp"); t.textContent=closed?"Devamını oku":"Daha az göster"; t.setAttribute("aria-expanded",String(!closed)); };
+      } else bp.classList.remove("clamp");
     }
+    if(p.price_note) add(c,"div","💰 "+p.price_note,"meta");
+    const lk=add(c,"div","","links");
+    [p.portfolio_url,p.social2_url].forEach(u=>{ if(u&&/^https?:\/\//i.test(u)){ const a=add(lk,"a","🔗 "+host(u)); a.href=u; a.target="_blank"; a.rel="noopener noreferrer"; } });
     if(p.id!==user.id&&role==="veren"){
       if(dirSent[p.id]) add(c,"div","Talebin: "+{bekliyor:"bekliyor",kabul:"kabul edildi",red:"reddedildi"}[dirSent[p.id]],"meta");
       else if(canSend){ const b=add(c,"button","Talep gönder","btn"); b.type="button"; b.onclick=()=>openReq(c,b,p); }
@@ -429,10 +443,13 @@ function renderProfile(){
   const put=(k,v)=>{ const d=row(k,v); if(d) d.append(v); };
   put("Rol",p.role==="veren"?"Hizmet veren":"Hizmet alan");
   put("Konum",p.il+(p.ilce?" / "+p.ilce:""));
+  put("Meslek",p.meslek);
   { const d=row("Kategoriler","x"); const cl=document.createElement("div"); cl.className="chips"; (p.categories||[]).forEach(x=>chip(cl,x)); d.appendChild(cl); }
   put("Tanıtım",p.bio);
-  const pd=row("Portföy",p.portfolio_url);
-  if(pd&&/^https?:\/\//i.test(p.portfolio_url)){ const a=document.createElement("a"); a.href=p.portfolio_url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=p.portfolio_url; pd.appendChild(a); } else if(pd) pd.append(p.portfolio_url);
+  ["portfolio_url","social2_url"].forEach((k,i)=>{
+    const u=p[k], d=row(i?"Sosyal medya 2":"Sosyal medya 1",u); if(!d) return;
+    if(/^https?:\/\//i.test(u)){ const a=document.createElement("a"); a.href=u; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=u; d.appendChild(a); } else d.append(u);
+  });
   put("Ücret notu",p.price_note);
   add(box,"p",p.status==="onayli"?"Profilin onaylandı.":p.status==="beklemede"?"Profilin incelendikten sonra yayınlanacak.":"Profilin onaylanmadı. Bilgilerini düzenleyip tekrar başvurmak için bizimle iletişime geç.","msg").style.color="var(--muted)";
   const e=add(box,"button","Düzenle","btn"); e.type="button"; e.onclick=()=>renderForm(true);
@@ -471,24 +488,32 @@ function catUI(role){
   });
 }
 
+function bioCount(){
+  const n=($("bio").value.match(/\S+/g)||[]).length, bc=$("bc");
+  bc.textContent=n+" kelime · en az 250, en çok 1000";
+  bc.className="hint "+(n>=250&&n<=1000?"ok":"bad");
+}
+
 function renderForm(edit){
   $("prof").innerHTML=`<form id="pf" novalidate>
   <fieldset id="rl"><legend>Ben</legend>
    <label class="rad"><input type="radio" name="role" value="veren"><span class="big">🎒</span><b>Hizmet veren</b><small>Yerel model, rehber, yeme-içme, konaklama…</small></label>
    <label class="rad"><input type="radio" name="role" value="alan"><span class="big">🎬</span><b>Hizmet alan</b><small>Fotoğrafçı / video ekibi</small></label>
   </fieldset>
-  <label>Görünen ad<input id="dn" maxlength="60"></label>
-  <label>İl<select id="il"><option value="">Seç</option>${IL.map(i=>`<option>${i}</option>`).join("")}</select></label>
-  <label>İlçe<input id="ilce" maxlength="60"></label>
+  <label>Görünen ad (gerçek adın)<input id="dn" maxlength="60" autocomplete="name" placeholder="Ad Soyad"><small class="hint">Görünen ad gerçek adın olmalı. Profilinde bu ad görünür.</small></label>
+  <label>İl (zorunlu)<select id="il"><option value="">Seç</option>${IL.map(i=>`<option>${i}</option>`).join("")}</select></label>
+  <label>İlçe (zorunlu)<input id="ilce" maxlength="60"></label>
+  <label>Mesleğin (zorunlu)<input id="mes" maxlength="80" placeholder="örn. fotoğrafçı, aşçı, rehber, öğretmen"></label>
   <fieldset><legend id="cl">Kategori</legend><div id="catbox"><p class="meta">Önce yukarıdan rolünü seç.</p></div></fieldset>
-  <label>Kısa tanıtım (en fazla 600 karakter)<textarea id="bio" maxlength="600" rows="4"></textarea></label>
-  <label>Portföy / sosyal medya bağlantısı<input id="pu" type="url" placeholder="https://"></label>
+  <label>Tanıtım yazın (en az 250, en çok 1000 kelime)<textarea id="bio" maxlength="12000" rows="10"></textarea><small class="hint" id="bc"></small></label>
+  <label>Sosyal medya bağlantısı 1 (zorunlu)<input id="pu" type="url" placeholder="https://instagram.com/…"></label>
+  <label>Sosyal medya bağlantısı 2 (isteğe bağlı)<input id="pu2" type="url" placeholder="https://…"></label>
   <label>Ücret notu (isteğe bağlı)<input id="pn" maxlength="200"></label>
   <fieldset><legend>İletişim: yalnızca kabul ettiğin taleplerde karşı tarafa açılır</legend>
-   <label>WhatsApp<input id="wa" maxlength="30"></label>
+   <label>WhatsApp (telefon numaran)<input id="wa" type="tel" inputmode="tel" maxlength="30" placeholder="05xx xxx xx xx"><small class="hint">WhatsApp için telefon numaran istenir. Yalnızca kabul ettiğin taleplerde karşı tarafa görünür.</small></label>
    <label>E-posta<input id="ce" type="email" maxlength="120"></label>
   </fieldset>
-  <label class="chk" id="rz" style="margin-top:12px"><input type="checkbox" id="rza"> Ad, il, kategori, tanıtım ve bağlantılarımın onaydan sonra giriş yapan kullanıcılara açık gösterilmesini kabul ediyorum. Profilimi istediğim zaman silebilirim.</label>
+  <label class="chk" id="rz" style="margin-top:12px"><input type="checkbox" id="rza"> Ad, il, ilçe, meslek, kategori, tanıtım ve sosyal medya bağlantılarımın onaydan sonra giriş yapan kullanıcılara açık gösterilmesini kabul ediyorum. Profilimi istediğim zaman silebilirim.</label>
   <button class="btn" type="submit">Kaydet</button><button class="btn alt" type="button" id="cn">Vazgeç</button>
   <p class="msg" id="fm" role="status"></p></form>`;
   if(edit){
@@ -496,26 +521,41 @@ function renderForm(edit){
     document.querySelector(`input[name=role][value=${p.role}]`).checked=true;
     document.querySelectorAll("input[name=role]").forEach(r=>r.disabled=true);
     $("dn").value=p.display_name; $("il").value=p.il; $("ilce").value=p.ilce||""; $("bio").value=p.bio||"";
-    $("pu").value=p.portfolio_url||""; $("pn").value=p.price_note||"";
+    $("pu").value=p.portfolio_url||""; $("pu2").value=p.social2_url||""; $("mes").value=p.meslek||""; $("pn").value=p.price_note||"";
     catUI(p.role); document.querySelectorAll("input[name=cat]").forEach(c=>{ c.checked=(p.categories||[]).includes(c.value); });
     if(contact){ $("wa").value=contact.whatsapp||""; $("ce").value=contact.email||""; }
     $("rz").hidden=true; $("cn").onclick=renderProfile;
   } else { $("cn").hidden=true; document.querySelectorAll("input[name=role]").forEach(r=>{ r.onchange=()=>catUI(r.value); }); }
   $("pf").onsubmit=e=>save(e,edit);
+  $("bio").addEventListener("input",bioCount); bioCount();
 }
 
 async function save(e,edit){
   e.preventDefault();
-  const g=id=>$(id).value.trim(), fm=$("fm");
+  const g=id=>$(id).value.trim(), fm=$("fm"), okUrl=u=>/^https?:\/\//i.test(u);
   const cats=[...document.querySelectorAll("input[name=cat]:checked")].map(x=>x.value);
-  const role=edit?profile.role:(document.querySelector("input[name=role]:checked")||{}).value, pu=g("pu");
-  const err=!role?"Rol seç.":g("dn").length<2?"Görünen ad en az 2 karakter olmalı.":!g("il")?"İl seç.":!cats.length?"En az bir kategori seç.":
-    (pu&&!/^https?:\/\//i.test(pu))?"Bağlantı http:// ya da https:// ile başlamalı.":(!edit&&!$("rza").checked)?"Devam etmek için yayın onayını işaretle.":"";
-  if(err){ fm.textContent=err; return; }
-  const f={display_name:g("dn"),il:g("il"),ilce:g("ilce")||null,categories:cats,bio:g("bio")||null,portfolio_url:pu||null,price_note:g("pn")||null};
+  const role=edit?profile.role:(document.querySelector("input[name=role]:checked")||{}).value;
+  const pu=g("pu"), pu2=g("pu2"), wa=g("wa"), wc=(g("bio").match(/\S+/g)||[]).length;
+  const err=[
+    [!role,"Rol seç."],
+    [g("dn").length<2,"Görünen ad en az 2 karakter olmalı (gerçek adın)."],
+    [!g("il"),"İl seç."],
+    [!g("ilce"),"İlçeni yaz."],
+    [g("mes").length<2,"Mesleğini yaz."],
+    [!cats.length,"En az bir kategori seç."],
+    [wc<250,"Tanıtım en az 250 kelime olmalı (şu an "+wc+")."],
+    [wc>1000,"Tanıtım en fazla 1000 kelime olabilir (şu an "+wc+")."],
+    [!pu,"Birinci sosyal medya bağlantısı zorunlu."],
+    [pu&&!okUrl(pu),"Birinci bağlantı http:// ya da https:// ile başlamalı."],
+    [pu2&&!okUrl(pu2),"İkinci bağlantı http:// ya da https:// ile başlamalı."],
+    [wa&&wa.replace(/\D/g,"").length<10,"WhatsApp için geçerli bir telefon numarası yaz (en az 10 rakam)."],
+    [!edit&&!$("rza").checked,"Devam etmek için yayın onayını işaretle."]
+  ].find(x=>x[0]);
+  if(err){ fm.textContent=err[1]; return; }
+  const f={display_name:g("dn"),il:g("il"),ilce:g("ilce"),meslek:g("mes"),categories:cats,bio:g("bio"),portfolio_url:pu,social2_url:pu2||null,price_note:g("pn")||null};
   const r=edit?await sb.from("profiles").update(f).eq("id",user.id):await sb.from("profiles").insert({...f,id:user.id,role,acik_riza:true});
   if(r.error){ fm.textContent="Kaydedilemedi: "+r.error.message; return; }
-  const c=await sb.from("contacts").upsert({user_id:user.id,whatsapp:g("wa")||null,email:g("ce")||null});
+  const c=await sb.from("contacts").upsert({user_id:user.id,whatsapp:wa||null,email:g("ce")||null});
   if(c.error){ fm.textContent="İletişim bilgisi kaydedilemedi: "+c.error.message; return; }
   tab="prof"; refresh();
 }
