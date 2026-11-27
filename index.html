@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Yerel Ekip</title>
+<title>Sanat İçin...</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <style>
 :root{--bg:#f3f1ec;--panel:#fff;--ink:#1d2433;--muted:#5d6678;--line:#d9dbe0;--acc:#1b4b8f;--warn:#b4491f}
 @media (prefers-color-scheme:dark){:root{--bg:#141a26;--panel:#1b2332;--ink:#e8ebf2;--muted:#9aa4b8;--line:#2c3547;--acc:#6aa0f0;--warn:#f08a5a}}
@@ -116,10 +118,32 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .lgd i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .bn{font:700 12px "Segoe UI",system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#fff}
 #s-veren small{color:var(--acc)}#s-alan small{color:var(--warn)}
+/* ---- Krem tema: başlık ve kartlar ---- */
+.hero{background:linear-gradient(135deg,#fffaf0 0%,#ffefc2 100%);color:#2b2417;border:1px solid #f0dca8;border-radius:18px}
+.hero .sub{color:#6b5d3f}
+.logo{background:#1f2937;font-size:0;padding:5px}
+.logo img{width:44px;height:44px;display:block}
+.burger{background:rgba(43,36,23,.08);color:#2b2417}
+.burger:focus-visible{outline:3px solid #2b2417}
+.mi.pri{background:var(--acc);color:var(--bg);font-weight:700;text-align:center;margin-bottom:4px}
+.card.pc{background:linear-gradient(135deg,#fffaf0 0%,#ffefc7 100%);border:1px solid #f0dca8;border-radius:18px;color:#2b2417}
+.pc h3{font-weight:700}
+.nm-veren{color:#0f766e}.nm-alan{color:#c2410c}
+.pc .meta,.pc .you,.pc label{color:#6b5d3f}
+.pc a{color:#0f5f58}
+.pc .chip{background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 55% 24%)}
+.pc .badge{background:rgba(43,36,23,.08);color:#3b2f12}
+.pc .badge.ok,.pc .badge.s-onayli,.pc .badge.s-kabul{background:#dcfce7;color:#166534}
+.pc .badge.s-beklemede,.pc .badge.s-bekliyor{background:#fef3c7;color:#92400e}
+.pc .badge.s-reddedildi,.pc .badge.s-red{background:#fee2e2;color:#991b1b}
+.pc .btn{background:#0f766e;color:#fff}
+.pc .btn.alt{background:transparent;color:#2b2417;border:2px solid #2b2417}
+.pc .btn.del{background:transparent;color:#b91c1c;border:2px solid #b91c1c}
+.pc textarea{background:#fffdf7;color:#2b2417;border-color:#e6d3a0}
 </style>
 </head>
 <body>
-<header class="hero"><div class="logo" aria-hidden="true">🎬</div><div><h1>Yerel Ekip</h1><p class="sub">Çekim ekipleri ile yerel hizmet verenleri buluşturur.</p></div>
+<header class="hero"><div class="logo"><img src="logo.png" alt="" width="44" height="44"></div><div><h1>Sanat İçin...</h1><p class="sub">Çekim ekipleri ile yerel hizmet verenleri buluşturur.</p></div>
   <button class="burger" id="bg" type="button" aria-label="Menü" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <nav class="menu" id="menu" aria-label="Bağlantılar" hidden></nav>
 </header>
@@ -193,11 +217,11 @@ let user=null, profile=null, contact=null, tab=null;
 
 const CE={"Yerel Model":"🧍","Barınma":"🏡","Yerel Rehberlik":"🧭","Ulaşım":"🚐","Yeme İçme":"🍲","Çekim Mekanı":"🏞️","Fotoğrafçı":"📸","Videographer":"🎥"};
 function hue(t){ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; }
-function av(name,cls){
+function av(name,cls,role){
   const e=document.createElement("span"), h=hue(name||"");
   e.className="av "+(cls||""); e.setAttribute("aria-hidden","true");
   e.textContent=(name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toLocaleUpperCase("tr");
-  e.style.background=`linear-gradient(135deg,hsl(${h} 60% 45%),hsl(${(h+40)%360} 65% 36%))`;
+  e.style.background=role==="veren"?"linear-gradient(135deg,#14b8a6,#0f766e)":role==="alan"?"linear-gradient(135deg,#fb923c,#c2410c)":`linear-gradient(135deg,hsl(${h} 60% 45%),hsl(${(h+40)%360} 65% 36%))`;
   return e;
 }
 function chip(parent,c){ const e=add(parent,"span",(CE[c]?CE[c]+" ":"")+c,"chip"); e.style.setProperty("--h",hue(c)); }
@@ -246,7 +270,7 @@ async function loadReq(){
   const other=x=>x.from_id===user.id?x.to_id:x.from_id, names={}, cts={};
   const ids=[...new Set(r.data.map(other))];
   if(ids.length){
-    const pr=await sb.from("profiles").select("id,display_name,il").in("id",ids);
+    const pr=await sb.from("profiles").select("id,display_name,il,role").in("id",ids);
     (pr.data||[]).forEach(p=>{ names[p.id]=p; });
     const acc=r.data.filter(x=>x.status==="kabul").map(other);
     if(acc.length){ const cr=await sb.from("contacts").select("*").in("user_id",acc); (cr.data||[]).forEach(c=>{ cts[c.user_id]=c; }); }
@@ -258,8 +282,8 @@ async function loadReq(){
     list.forEach(x=>{
       const o=names[other(x)]||{}, c=document.createElement("article"); c.className="card pc";
       c.classList.add("st-"+x.status);
-      const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(o.display_name||"?")); hd.appendChild(tx);
-      add(tx,"h3",o.display_name||"Bilinmeyen kullanıcı");
+      const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(o.display_name||"?","",o.role)); hd.appendChild(tx);
+      add(tx,"h3",o.display_name||"Bilinmeyen kullanıcı","nm-"+(o.role||""));
       add(tx,"span",{bekliyor:"Bekliyor",kabul:"Kabul edildi",red:"Reddedildi"}[x.status],"badge s-"+x.status);
       add(tx,"div",(o.il?"📍 "+o.il+" · ":"")+new Date(x.created_at).toLocaleDateString("tr-TR"),"meta");
       add(c,"p",x.message,"bio");
@@ -310,8 +334,8 @@ function renderDir(){
   if(!list.length){ const e=add(dl,"div","","empty"); add(e,"div","🔍","big"); add(e,"p","Bu filtrede henüz kimse yok. Başka bir kategori ya da il dene."); }
   list.forEach(p=>{
     const c=document.createElement("article"); c.className="card pc";
-    const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name)); hd.appendChild(tx);
-    const h=add(tx,"h3",p.display_name); if(p.id===user.id) add(h,"span"," (sen)","you");
+    const hd=add(c,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name,"",p.role)); hd.appendChild(tx);
+    const h=add(tx,"h3",p.display_name,"nm-"+p.role); if(p.id===user.id) add(h,"span"," (sen)","you");
     if(p.verified) add(tx,"span","✓ Doğrulanmış","badge ok");
     add(tx,"div","📍 "+p.il+(p.ilce?" / "+p.ilce:""),"meta");
     const cl=add(c,"div","","chips"); (p.categories||[]).forEach(x=>chip(cl,x));
@@ -395,7 +419,7 @@ function paintMap(){
 
 function renderProfile(){
   const p=profile, box=$("prof"); box.textContent="";
-  const hd=add(box,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name,"lg")); hd.appendChild(tx);
+  const hd=add(box,"div","","hd"), tx=document.createElement("div"); hd.appendChild(av(p.display_name,"lg",p.role)); hd.appendChild(tx);
   add(tx,"h2",p.display_name).style.margin="0 0 6px";
   const b=document.createElement("div");
   add(b,"span",{beklemede:"Onay bekliyor",onayli:"Onaylı",reddedildi:"Reddedildi"}[p.status],"badge s-"+p.status);
@@ -429,6 +453,11 @@ function buildMenu(){
     else { el=document.createElement("button"); el.type="button"; if(i.d) el.onclick=()=>{ closeMenu(); $("hdlg").showModal(); }; else el.disabled=true; }
     el.className="mi"; el.textContent=i.t+(!i.u&&!i.d?" (yakında)":""); m.appendChild(el);
   });
+  if(!user){
+    const g=document.createElement("button"); g.type="button"; g.className="mi pri"; g.textContent="Giriş yap";
+    g.onclick=()=>{ closeMenu(); $("authv").scrollIntoView({behavior:"smooth",block:"start"}); $("em").focus(); };
+    m.prepend(g);
+  }
   if(user){ const o=add(m,"button","Çıkış yap","mi"); o.type="button"; o.onclick=()=>{ closeMenu(); sb.auth.signOut(); }; }
 }
 
